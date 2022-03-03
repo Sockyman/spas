@@ -1,0 +1,16 @@
+VALUE = -0x2 ; nice
+
+.address 0x100
+
+reset:
+    lda #(~VALUE)
+    add #(VALUE)
+    jmp lol
+lol:
+    hlt
+
+.byte 12, 0x65, 1, 2, 3, 4, 5, 6, 7
+
+things:
+.word 0x1234, 0x8001, 12
+
