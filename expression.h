@@ -2,7 +2,9 @@
 #define EXPRESSION_H
 
 #include <stdbool.h>
+#include <stdio.h>
 #include "symbol.h"
+#include "trace.h"
 
 enum expression_type
 {
@@ -53,14 +55,18 @@ typedef struct Expression
 
 Expression *generate_symbolic_expression(const char *symbol);
 Expression *generate_integral_expression(int value);
+//Expression *generate_char_expression(const char *string);
 Expression *generate_single_operand_expression(int operation, Expression *operand);
 Expression *generate_dual_operand_expression(int operation, Expression *x, Expression *y);
 
 void free_expression(Expression *expression);
 bool resolve_expression(Symbol *symbol_map, const Expression *expression, int *value);
 int resolve_operation(int operation, int x, int y);
+void bad_expression(Trace *trace, Expression *expression);
 
 void print_expression(const Expression *expression);
+void fprint_expression(FILE *file, const Expression *expression);
+void sprint_expression(char *string, const Expression *expression);
 char *operation_string(int operation);
 
 #endif

@@ -12,10 +12,14 @@ void push_symbol(char *name, Expression *value);
 void push_label(char *name);
 void push_data(int mode, Datalist *datalist);
 void push_address(Expression *expr);
+void push_align(Expression *expr);
+void push_include(const char *path, int mode);
+void push_section(const char *section);
+void push_reserve(Expression *expr);
 
 Node *get_tree(void);
-void free_tree(void);
-void print_tree(void);
+void free_tree(Node *tree);
+void print_tree(Node *tree);
 
 #endif
 

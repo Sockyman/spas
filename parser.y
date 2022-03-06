@@ -35,20 +35,23 @@ extern int yylex();
     Datalist *datal;
 }
 
-%token IDENTIFIER STRING;
-%token INTEGER CHARACTER
+%token IDENTIFIER STRING
+%token INTEGER 
 %token NEWLINE "\n"
 %token ASSIGN "=" COLON ":" COMMA "," HASH "#"
 %token PAREN_OPEN "(" PAREN_CLOSE ")" SQUARE_OPEN "[" SQUARE_CLOSE "]"
 %token XREG "x" YREG "y"
 %token BIT_AND "&" BIT_OR "|" BIT_NOT "~" BIT_XOR "^"
 %token ADD "+" SUBTRACT "-" MULTIPLY "*" DIVIDE "/"
-%token D_ADDR D_BYTE D_WORD D_INCLUDE D_INCLUDE_ONCE D_INCLUDE_BIN D_ALLIGN
+%token D_ADDR D_BYTE D_WORD D_INCLUDE D_INCLUDE_ONCE D_INCLUDE_BIN D_ALIGN
+%token D_SECTION D_RESERVE
+%token D_MACRO D_ENDMACRO
+
 
 %type <integer> INTEGER
-%type <string> IDENTIFIER STRING CHARACTER
+%type <string> IDENTIFIER STRING 
 %type <expr> expression
-%type <datal> data_list
+%type <datal> data_list data_entry
 
 %left BIT_OR
 %left BIT_XOR
@@ -91,15 +94,22 @@ directive
     : D_ADDR expression "\n"        { push_address($2); }
     | D_BYTE data_list "\n"         { push_data(DATA_BYTE, $2); }
     | D_WORD data_list "\n"         { push_data(DATA_WORD, $2); }
-    | D_INCLUDE STRING "\n"
-    | D_INCLUDE_ONCE STRING "\n"
-    | D_INCLUDE_BIN STRING "\n"
-    | D_ALLIGN expression "\n"
+    | D_INCLUDE STRING "\n"         { push_include($2, INCLUDE_ALWAYS); }
+    | D_INCLUDE_ONCE STRING "\n"    { push_include($2, INCLUDE_ONCE); }
+    | D_INCLUDE_BIN STRING "\n"     { push_include($2, INCLUDE_BIN); }
+    | D_ALIGN expression "\n"       { push_align($2); }
+    | D_SECTION IDENTIFIER "\n"     { push_section($2); }
+    | D_RESERVE expression "\n"     { push_reserve($2); }
     ;
 
 data_list
-    : data_list "," expression      { $$ = append_datalist($1, $3); }
-    | expression                    { $$ = new_datalist($1); }             
+    : data_list "," data_entry      { $$ = append_datalist($1, $3); }
+    | data_entry                    { $$ = $1; }             
+    ;
+
+data_entry
+    : expression                    { $$ = new_datalist($1); }
+    | STRING                        { $$ = new_data_string($1); free($1); }
     ;
 
 instruction
@@ -131,6 +141,6 @@ expression
 
 void yyerror(const char *s)
 {
-    print_error(&global_trace, s);
+    print_error(global_trace, s);
 }
 

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "parser.tab.h"
 #include "trace.h"
+#include "error.h"
 
 %}
 
@@ -37,9 +38,13 @@
 ".address"           { return D_ADDR; }
 ".byte"              { return D_BYTE; }
 ".word"              { return D_WORD; }
+".align"             { return D_ALIGN; }
 ".include"           { return D_INCLUDE; }
 ".include_once"      { return D_INCLUDE_ONCE; }
 ".include_binary"    { return D_INCLUDE_BIN; }
+
+".section"          { return D_SECTION; }
+".res"              { return D_RESERVE; }
 
 0x[0-9a-fA-F]+  {
     yylval.integer = strtol(yytext, NULL, 16);
@@ -47,6 +52,17 @@
 }
 
 0b[01]+  {
+    int val = 0b0;
+    for (int i = 2; i < strlen(yytext); ++i)
+    {
+        val = val << 1;
+        if (yytext[i] == '1')
+        {
+            ++val;
+        }
+    }
+
+    yylval.integer = val;
     return INTEGER;
 }
 
@@ -55,8 +71,16 @@
     return INTEGER; 
 }
 
-\".\"  {
-    return STRING; 
+\'.\' {
+    yylval.integer = yytext[1];
+    return INTEGER;
+}
+
+\"([^\"])*\" {
+    yylval.string = malloc(strlen(yytext) - 1);
+    memcpy(yylval.string, yytext + 1, strlen(yytext) - 2);
+    yylval.string[strlen(yytext) - 1] = 0;
+    return STRING;
 }
 
 [a-zA-Z_][a-zA-Z0-9_]*  {
@@ -64,26 +88,16 @@
     return IDENTIFIER;
 }
 
-\'.\' {
-    yylval.string = strdup(yytext);
-    return CHARACTER;
-}
-
-\'\\.\' {
-    yylval.string = strdup(yytext);
-    return CHARACTER;
-}
-
 \n { 
-    global_trace.line += 1;
-    global_trace.column = 1;
+    global_trace->line += 1;
+    global_trace->column = 1;
     return NEWLINE; 
 }
 
 \;.*         { ; }
 [ \t\r]+     { ; }
 
-.            { printf("Invalid token.\n"); }
+.            { print_error(NULL, "Invalid token: %s.", yytext); }
 
 %%
 

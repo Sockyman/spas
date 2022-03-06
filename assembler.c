@@ -16,8 +16,7 @@ void assemble(FILE *file, Node *nodes)
     symbol_map->value = 0;
     symbol_map->next = NULL;
 
-    Instruction *set = load_instruction_set();
-    Context context = { NULL, 0, CONTEXT_INITIAL_CAPACITY, false, false, set, symbol_map };
+    Context context = { NULL, 0, 0, CONTEXT_INITIAL_CAPACITY, false, false, SECTION_TEXT, symbol_map };
 
     if (error_count())
         return;
@@ -33,17 +32,17 @@ void assemble(FILE *file, Node *nodes)
 
     if (!error_count())
     {
-        fwrite(context.output, context.address, 1, file);
+        fwrite(context.output, context.address_text, 1, file);
     }
 
     free_symbol_map(context.symbol_map);
     free(context.output);
-    free(set);
 }
 
 bool assembler_pass(Context *context, Node *nodes)
 {
-    context->address = 0;
+    context->address_text = 0x0;
+    context->address_data = 0x8000;
     bool changed = false;
     Node *current = nodes;
     while (current)
@@ -71,6 +70,17 @@ bool assembler_pass(Context *context, Node *nodes)
             case NODE_ADDRESS:
                 assemble_address(context, current);
                 break;
+            case NODE_ALIGN:
+                assemble_align(context, current);
+                break;
+            case NODE_SECTION:
+                context->region = current->mode;
+                break;
+            case NODE_RESERVE:
+                assemble_reserve(context, current);
+                break;
+            default:
+                break;
         }
         
         current = current->next;
@@ -87,10 +97,10 @@ void assemble_instruction(Context *context, Node *node)
     {
         if (context->final_pass)
         {
-            to_write[0] = inscuction_opcode(context->instruction_set, node->name, node->mode); 
-            if (to_write[0] == 0xff)
+            if (!instruction_opcode(node->name, node->mode, &to_write[0]))
             {
-                print_error(&node->trace, "instruction %s:%d does not exist", node->name, node->mode);
+                print_error(&node->trace, "instruction \"%s%s\" does not exist", node->name, 
+                    get_addressing_mode_name(node->mode));
             }
         }
     
@@ -99,8 +109,7 @@ void assemble_instruction(Context *context, Node *node)
             int value = 0;
             if (!resolve_expression(context->symbol_map, node->expression, &value))
             {
-                // TODO: Error stuff
-                print_error(&node->trace, "unable to resolve expression.");
+                bad_expression(&node->trace, node->expression);
             }
     
             if (size > 1)
@@ -118,7 +127,7 @@ void assemble_instruction(Context *context, Node *node)
         }
     }
 
-    write_bytes(context, to_write, size);
+    write_bytes(context, &node->trace, to_write, size);
 }
 
 void assemble_data(Context *context, Node *node)
@@ -126,56 +135,100 @@ void assemble_data(Context *context, Node *node)
     Datalist *current = node->datalist;
     while (current)
     {
-        int value = 0;
-        if (context->final_pass)
+        if (current->is_string)
         {
-            if (!resolve_expression(context->symbol_map, current->expression, &value))
-            {
-                // TODO: Error stuff
-                print_error(&node->trace, "unable to resolve expression.");
-            }
+            write_bytes(context, &node->trace, (unsigned char*)current->string, strlen(current->string));
         }
-        unsigned char to_write[] = { value, value >> 8 };
-        int size = 1 + node->mode;
-        write_bytes(context, to_write, size);
-
+        else
+        {
+            int value = 0;
+            if (context->final_pass)
+            {
+                if (!resolve_expression(context->symbol_map, current->expression, &value))
+                {
+                    bad_expression(&node->trace, current->expression);
+                }
+            }
+            unsigned char to_write[] = { value, value >> 8 };
+            int size = 1 + node->mode;
+            write_bytes(context, &node->trace, to_write, size);
+        }
         current = current->next;
     }
-
-}
-
-void write_bytes(Context *context, unsigned char *bytes, int size)
-{
-    if (context->final_pass)
-    {
-        while (context->address + size >= context->capacity)
-        {
-            context->capacity *= 2;
-            char *new_output = realloc(context->output, context->capacity);
-            if (!new_output)
-            {
-                //TODO: Error
-                printf("Error: Unable to reallocate output array.\n");
-            }
-            context->output = new_output;
-        }
-        for (int i = 0; i < size; ++i)
-        {
-            // printf("Writing %02x: %02x\n", context->address + i, bytes[i]);
-            context->output[context->address + i] = bytes[i];
-        }
-    }
-    context->address += size;
 }
 
 void assemble_address(Context *context, Node *node)
 {
     int value;
+    //TODO: error chekcing
     resolve_expression(context->symbol_map, node->expression, &value);
-    while (value > context->address)
+    while (value > get_address(context))
     {
-        unsigned char c = 0;
-        write_bytes(context, &c, 1);
+        pad_bytes(context, &node->trace, 1);
     }
 }
 
+void assemble_align(Context *context, Node *node)
+{
+    int value;
+    resolve_expression(context->symbol_map, node->expression, &value);
+    while (get_address(context) % value != 0)
+    {
+        pad_bytes(context, &node->trace, 1);
+    }
+
+}
+
+void assemble_reserve(Context *context, Node *node)
+{
+    int value;
+    resolve_expression(context->symbol_map, node->expression, &value);
+    pad_bytes(context, &node->trace, value);
+}
+
+void write_bytes(Context *context, Trace *trace, unsigned char *bytes, int size)
+{
+    if (context->final_pass)
+    {
+        if (context->region == SECTION_DATA)
+        {
+            print_error(trace, "cannot write to data region.");
+        }
+        else
+        {
+            while (context->address_text + size >= context->capacity)
+            {
+                context->capacity *= 2;
+                char *new_output = realloc(context->output, context->capacity);
+                if (!new_output)
+                {
+                    //TODO: Error
+                    printf("Error: Unable to reallocate output array.\n");
+                }
+                context->output = new_output;
+            }
+            for (int i = 0; i < size; ++i)
+            {
+                context->output[context->address_text + i] = bytes[i];
+            }
+        }
+    }
+    set_address(context, get_address(context) + size);
+}
+
+void pad_bytes(Context *context, Trace *trace, int size)
+{
+    if (context->region == SECTION_TEXT)
+    {
+        for (int i = 0; i < size; ++i)
+        {
+            unsigned char c = 0;
+            write_bytes(context, trace, &c, 1);
+        }
+    }
+    else
+    {
+        set_address(context, get_address(context) + size);
+    }
+
+}

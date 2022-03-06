@@ -1,6 +1,8 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <stdbool.h>
+#include <stdio.h>
 #include "expression.h"
 #include "trace.h"
 
@@ -11,6 +13,10 @@ enum node_type
     NODE_SYMBOL,
     NODE_DATA,
     NODE_ADDRESS,
+    NODE_ALIGN,
+    NODE_INCLUDE,
+    NODE_SECTION,
+    NODE_RESERVE,
 };
 
 enum data_mode
@@ -19,8 +25,23 @@ enum data_mode
     DATA_WORD,
 };
 
+enum include_mode
+{
+    INCLUDE_ALWAYS,
+    INCLUDE_ONCE,
+    INCLUDE_BIN,
+};
+
+enum section_mode
+{
+    SECTION_TEXT,
+    SECTION_DATA,
+};
+
 typedef struct Datalist
 {
+    bool is_string;
+    char *string;
     Expression *expression;
     struct Datalist *next;
 
@@ -38,14 +59,15 @@ typedef struct Node
     struct Node *next;
 } Node;
 
-Node *new_node(int type, char *name, int mode, Expression *expression, Datalist *datalist, Trace trace);
+Node *new_node(int type, const char *name, int mode, Expression *expression, Datalist *datalist, Trace trace);
 
-int node_size(Node *node);
 void free_node(Node *node);
 void print_node(Node *node);
+void fprint_node(FILE *file, Node *node);
 
 Datalist *new_datalist(Expression *expression);
-Datalist *append_datalist(Datalist *datalist, Expression *expression);
+Datalist *new_data_string(char *string);
+Datalist *append_datalist(Datalist *datalist, Datalist *value);
 int datalist_size(int mode, Datalist *datalist);
 
 #endif

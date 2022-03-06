@@ -8,7 +8,7 @@ typedef struct Trace
     char *filename;
 } Trace;
 
-extern Trace global_trace;
+extern Trace *global_trace;
 
 #endif
 

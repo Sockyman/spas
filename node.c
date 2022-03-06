@@ -5,32 +5,45 @@
 #include "expression.h"
 #include "instruction.h"
 
+void print_node(Node *node)
+{
+    fprint_node(stdout, node);
+}
 
-int node_size(Node *node)
+void fprint_node(FILE *file, Node *node)
 {
     switch (node->type)
     {
-        case NODE_INSTRUCTION:
-            return instruction_size(node->mode);
-        case NODE_DATA:
-            return datalist_size(node->mode, node->datalist);
-        default:
-            return 0;
+    case NODE_INSTRUCTION:
+        fprintf(file, "  %s %s ", node->name, get_addressing_mode_name(node->mode));
+        if (node->expression)
+        {
+            fprint_expression(file, node->expression);
+        }
+        break;
+    case NODE_LABEL:
+        fprintf(file, "%s:", node->name);
+        break;
+    case NODE_SYMBOL:
+        fprintf(file, "%s = ", node->name);
+        fprint_expression(file, node->expression);
+        break;
+    default:
+        fprintf(file, "[%d]", node->type);
+        if (strlen(node->name) > 0)
+        {
+            fprintf(file, " %s", node->name);
+        }
+        if (node->expression)
+        {
+            fprintf(file, " ");
+            fprint_expression(file, node->expression);
+        }
+        break;
     }
 }
 
-void print_node(Node *node)
-{
-    printf("%d: %s ", node->type, node->name);
-    if (node->expression)
-    {
-        print_expression(node->expression);
-    }
-    printf(" at %s:%d", node->trace.filename, node->trace.line);
-}
-
-
-Node *new_node(int type, char *name, int mode, Expression *expression, Datalist *datalist, Trace trace)
+Node *new_node(int type, const char *name, int mode, Expression *expression, Datalist *datalist, Trace trace)
 {
     Node *node = malloc(sizeof(Node));
     node->type = type;
@@ -56,7 +69,14 @@ void free_node(Node *node)
     while (current)
     {
         Datalist *next = current->next;
-        free_expression(current->expression);
+        if (current->is_string)
+        {
+            free(current->string);
+        }
+        else
+        {
+            free_expression(current->expression);
+        }
         free(current);
         current = next;
     }
@@ -68,18 +88,30 @@ Datalist *new_datalist(Expression *expression)
 {
     Datalist *datalist = malloc(sizeof(Datalist));
     datalist->expression = expression;
+    datalist->is_string = false;
+    datalist->string = NULL;
     datalist->next = NULL;
     return datalist;
 }
 
-Datalist *append_datalist(Datalist *datalist, Expression *expression)
+Datalist *new_data_string(char *string)
+{
+    Datalist *datalist = malloc(sizeof(Datalist));
+    datalist->expression = NULL;
+    datalist->is_string = true;
+    datalist->string = strdup(string);
+    datalist->next = NULL;
+    return datalist;
+}
+
+Datalist *append_datalist(Datalist *datalist, Datalist *value)
 {
     Datalist *current = datalist;
     while (current->next)
     {
         current = current->next;
     }
-    current->next = new_datalist(expression);
+    current->next = value;
     return datalist;
 }
 

@@ -27,17 +27,18 @@ bool resolve_node_symbol(Context *context, Node *node)
 
 bool resolve_node_label(Context *context, Node *node)
 {
+    int address = get_address(context);
     int value;
     bool is_defined = resolve_symbol(context->symbol_map, node->name, &value);
 
-    if (context->final_pass && is_defined && value != context->address)
+    if (context->final_pass && is_defined && value != address)
     {
         print_error(&node->trace, "Label \"%s\" at address %d is already defined", 
-            node->name, context->address);
+            node->name, address);
     }
 
-    define_symbol(context, node->name, context->address);
+    define_symbol(context, node->name, address);
 
-    return value != context->address;
+    return value != address;
 }
 

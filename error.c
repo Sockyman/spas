@@ -11,9 +11,13 @@ int error_count(void)
 
 void print_error(Trace *trace, const char *message, ...)
 {
+    if (trace)
+    {
+        printf("%s:%d: ", trace->filename, trace->line);
+    }
     va_list valist;
     va_start(valist, message);
-    printf("%s:%d: error: ", trace->filename, trace->line);
+    printf("\033[0;31merror:\033[0m ");
     vprintf(message, valist);
     printf("\n");
     ++global_errors;

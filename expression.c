@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "trace.h"
+#include "error.h"
 #include "expression.h"
 
 
@@ -20,6 +22,51 @@ Expression *generate_integral_expression(int value)
     expr->type = EXPR_INTEGRAL;
     expr->value.integer = value;
     return expr;
+}
+
+Expression *generate_char_expression(const char *string)
+{
+    unsigned char value = 0;
+    int len = strlen(string);
+
+    if (string[0] == '\\')
+    {
+        if (len == 2)
+        {
+            switch (string[1])
+            {
+                case '0':
+                    value = 0;
+                    break;
+                case 'n':
+                    value = '\n';
+                    break;
+                case '\\':
+                    value = '\\';
+                    break;
+                case '\"':
+                    value = '\"';
+                    break;
+                default:
+                    print_error(global_trace, "invalid escape character \"\\%c\".", string[1]);
+                    break;
+            }
+        }
+        else
+        {
+            print_error(global_trace, "bad length %d.", len);
+        }
+    }
+    else if (len == 1)
+    {
+        value = string[0];
+    }
+    else
+    {
+        print_error(global_trace, "invalid character length.");
+    }
+
+    return generate_integral_expression(value);
 }
 
 Expression *generate_single_operand_expression(int operation, Expression *operand)
@@ -133,28 +180,58 @@ int resolve_operation(int operation, int x, int y)
     return 0;
 }
 
+void bad_expression(Trace *trace, Expression *expression)
+{
+    char exstr[512];
+    sprint_expression(exstr, expression);
+    print_error(trace, "unable to resolve expression: %s.", exstr);
+}
+
 void print_expression(const Expression *expression)
 {
+    fprint_expression(stdout, expression);
+}
+
+void fprint_expression(FILE *file, const Expression *expression)
+{
+    char string[512];
+    string[0] = 0;
+    sprint_expression(string, expression);
+    fprintf(file, "%s", string);
+}
+
+void sprint_expression(char *string, const Expression *expression)
+{
+    char s[256];
     switch (expression->type)
     {
         case EXPR_SYMBOLIC:
-            printf("%s", expression->value.symbol);
+            sprintf(s, "%s", expression->value.symbol);
+            strcat(string, s);
             break;
         case EXPR_INTEGRAL:
-            printf("0x%02x", expression->value.integer);
+            //printf("0x%02x", expression->value.integer);
+            sprintf(s, "%d", expression->value.integer);
+            strcat(string, s);
             break;
         case EXPR_SINGLE_OPERAND:
-            printf("(");
-            printf("%s", operation_string(expression->operation));
-            print_expression(expression->value.single_operand);
-            printf(")");
+            sprintf(s, "(");
+            strcat(string, s);
+            sprintf(s, "%s", operation_string(expression->operation));
+            strcat(string, s);
+            sprint_expression(string, expression->value.single_operand);
+            sprintf(s, ")");
+            strcat(string, s);
             break;
         case EXPR_DUAL_OPERAND:
-            printf("(");
-            print_expression(expression->value.dual_operand.x);
-            printf(" %s ", operation_string(expression->operation));
-            print_expression(expression->value.dual_operand.y);
-            printf(")");
+            sprintf(s, "(");
+            strcat(string, s);
+            sprint_expression(string, expression->value.dual_operand.x);
+            sprintf(s, " %s ", operation_string(expression->operation));
+            strcat(string, s);
+            sprint_expression(string, expression->value.dual_operand.y);
+            sprintf(s, ")");
+            strcat(string, s);
             break;
     }
 }

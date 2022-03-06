@@ -5,6 +5,29 @@
 #include "instruction.h"
 #include "error.h"
 
+/*char *mode_names[] =
+{
+    "implied",
+    "immediate",
+    "direct",
+    "x_paged",
+    "y_paged",
+    "indexed",
+};*/
+
+char *mode_names[] =
+{
+    " ",
+    "#",
+    "@",
+    "<x,@>",
+    "<y,@>",
+    "<x,y>",
+};
+
+extern Instruction instruction_set[];
+extern int opcode_count;
+
 int instruction_size(int addressing)
 {
     switch (addressing)
@@ -24,36 +47,30 @@ int instruction_size(int addressing)
     return 0;
 }
 
-int inscuction_opcode(Instruction *set, char *name, int addressing)
+bool instruction_opcode(char *name, int addressing, unsigned char *value)
 {
-    for (int i = 0; i < MAX_INSTRUCTIONS; ++i)
+    for (int i = 0; i < opcode_count; ++i)
     {
-        if (set[i].addressing == addressing && !strcmp(set[i].name, name))
+        if (instruction_set[i].addressing == addressing && !strcmp(instruction_set[i].name, name))
         {
-            return i;
+            *value = i;
+            return true;
         }
     }
-    return -1;
+    *value = 0;
+    return false;
 }
 
-Instruction *load_instruction_set(void)
+void print_instruction_set(void)
 {
-    Instruction *set = malloc(sizeof(Instruction) * MAX_INSTRUCTIONS);
-    FILE *file = fopen("instruction_set.txt", "r");
-
-    for (int i = 0; i < MAX_INSTRUCTIONS; ++i)
+    for (int i = 0; i < opcode_count; ++i)
     {
-        fscanf(file, "%d %s", &set[i].addressing, set[i].name);
+        printf("%d %s\n", instruction_set[i].addressing, instruction_set[i].name);
     }
-    fclose(file);
-    return set;
 }
 
-void print_instruction_set(Instruction *set)
+char *get_addressing_mode_name(int mode)
 {
-    for (int i = 0; i < MAX_INSTRUCTIONS; ++i)
-    {
-        printf("%d %s\n", set[i].addressing, set[i].name);
-    }
+    return mode_names[mode];
 }
 

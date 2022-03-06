@@ -9,8 +9,9 @@
 #include "assembler.h"
 #include "trace.h"
 #include "error.h"
+#include "parse.h"
 
-const char *argp_program_version = "spasm v1.0";
+const char *argp_program_version = "spasm v0.1";
 const char *argp_program_bug_address = "<sockymanthesock@gmail.com>";
 const char doc[] = "SPDR assembler.";
 const char args_doc[] = "INFILE";
@@ -49,10 +50,11 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
 }
 
 
-Trace global_trace;
+Trace *global_trace;
 
 int main(int argc, char **argv)
 {
+
     /* Parse command line arguments */
 
     struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
@@ -63,42 +65,40 @@ int main(int argc, char **argv)
 
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
+    //parse_file(NULL, NULL);
+
     if (arguments.infile)
     {
-        yyin = fopen(arguments.infile, "r");
-        global_trace.filename = arguments.infile;
+        initialize_path_cache();
+        /* Parse input file */
+        char *name = cache_add_path(arguments.infile);
+
+        Node *end;
+        Node *tree = parse_file(name, &end);
+        //print_tree(tree);
+
+        /* Assemble */
+
+        if (!error_count())
+        {
+            FILE *file;
+            if (arguments.outfile) 
+                { file = fopen(arguments.outfile, "wb"); }
+            else 
+                { file = stdout; }
+
+            assemble(file, tree);
+            if (arguments.outfile) 
+                { fclose(file); }
+        }
+
+        free_tree(tree);
+        free_path_cache();
     }
     else
     {
-        yyin = stdin;
-        global_trace.filename = "STDIN";
+        print_error(NULL, "no input file specified.");
     }
-    global_trace.line = 1;
-    global_trace.column = 1;
-
-    /* Parse input file */
-
-    initialize_node_tree();
-    yyparse();
-    if (arguments.infile) 
-        { fclose(yyin); }
-
-    /* Assemble */
-
-    if (!error_count())
-    {
-        FILE *file;
-        if (arguments.outfile) 
-            { file = fopen(arguments.outfile, "wb"); }
-        else 
-            { file = stdout; }
-
-        assemble(file, get_tree());
-        if (arguments.outfile) 
-            { fclose(file); }
-    }
-
-    free_tree();
-    return error_count();
+    return error_count() != 0;
 }
 

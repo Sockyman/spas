@@ -1,16 +1,26 @@
-VALUE = -0x2 ; nice
 
-.address 0x100
+.section data
+A:
+    .res 1
+B:
+    .res 1
+C:
+    .res 1
 
+.section text
 reset:
-    lda #(~VALUE)
-    add #(VALUE)
-    jmp lol
-lol:
-    hlt
-
-.byte 12, 0x65, 1, 2, 3, 4, 5, 6, 7
-
-things:
-.word 0x1234, 0x8001, 12
+    lda #0
+    sta B
+    lda #1
+    sta C
+loop:
+    out
+    lda B
+    sta A
+    lda C
+    sta B
+    add A
+    sta C
+    jnc loop
+    jmp reset
 
