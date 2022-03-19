@@ -2,23 +2,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <argp.h>
-#include "syntax_tree.h"
 #include "parser.tab.h"
-#include "resolve.h"
 #include "symbol.h"
 #include "assembler.h"
 #include "trace.h"
 #include "error.h"
 #include "parse.h"
 
-const char *argp_program_version = "spasm v0.1";
+const char *argp_program_version = "SPDR assembler v0.1";
 const char *argp_program_bug_address = "<sockymanthesock@gmail.com>";
 const char doc[] = "SPDR assembler.";
 const char args_doc[] = "INFILE";
 static struct argp_option options[] =
 {
-    { "output", 'o', "OUTFILE", 0, "File to write to"},
-    { "print", 'p', 0, 0, "Output in plaintext"},
+	{ "output", 'o', "OUTFILE", 0, "File to write to" },
+    { "print", 'p', 0, 0, "Output in plaintext" },
     { 0 }
 };
 
@@ -49,14 +47,11 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-
 Trace *global_trace;
 
 int main(int argc, char **argv)
 {
-
     /* Parse command line arguments */
-
     struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
     struct arguments arguments;
     arguments.infile = NULL;
@@ -64,8 +59,6 @@ int main(int argc, char **argv)
     arguments.pretty_print = false;
 
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
-
-    //parse_file(NULL, NULL);
 
     if (arguments.infile)
     {

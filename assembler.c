@@ -6,8 +6,6 @@
 #include "assembler.h"
 #include "instruction.h"
 #include "error.h"
-#include "resolve.h"
-
 
 void assemble(FILE *file, Node *nodes)
 {
@@ -16,26 +14,36 @@ void assemble(FILE *file, Node *nodes)
     symbol_map->value = 0;
     symbol_map->next = NULL;
 
-    Context context = { NULL, 0, 0, CONTEXT_INITIAL_CAPACITY, false, false, SECTION_TEXT, symbol_map };
-
-    if (error_count())
-        return;
-
-    context.output = malloc(sizeof(char) * CONTEXT_INITIAL_CAPACITY);
-
-    for (int i = 0; i < 10; ++i)
-    {
-        assembler_pass(&context, nodes);
-    }
-    context.final_pass = true;
-    assembler_pass(&context, nodes);
+    Context context = { NULL, 0, 0, CONTEXT_INITIAL_CAPACITY, false, false, 
+        SECTION_TEXT, symbol_map, NULL, NULL };
 
     if (!error_count())
     {
-        fwrite(context.output, context.address_text, 1, file);
+        context.output = malloc(sizeof(char) * CONTEXT_INITIAL_CAPACITY);
+
+        int iterations = 0;
+        while (assembler_pass(&context, nodes) && iterations < MAX_ITERATIONS)
+        {
+            ++iterations;
+        }
+        //printf("iterations: %d\n", iterations);
+        if (iterations >= MAX_ITERATIONS)
+            print_error(NULL, "program cannot be resolved in maximum iterations.");
+
+        if (!error_count())
+        {
+            context.final_pass = true;
+            assembler_pass(&context, nodes);
+
+            if (!error_count())
+            {
+                fwrite(context.output, context.address_text, 1, file);
+            }
+        }
     }
 
     free_symbol_map(context.symbol_map);
+    free_expected_values(context.expected_values);
     free(context.output);
 }
 
@@ -43,49 +51,51 @@ bool assembler_pass(Context *context, Node *nodes)
 {
     context->address_text = 0x0;
     context->address_data = 0x8000;
-    bool changed = false;
     Node *current = nodes;
+    context->expected_value_head = context->expected_values;
+    bool changed = false;
+
     while (current)
     {
-        switch (current->type)
-        {
-            case NODE_LABEL:
-                if (resolve_node_label(context, current))
-                {
-                    changed = true;
-                }
-                break;
-            case NODE_SYMBOL:
-                if (resolve_node_symbol(context, current))
-                {
-                    changed = true;
-                }
-                break;
-            case NODE_INSTRUCTION:
-                assemble_instruction(context, current);
-                break;
-            case NODE_DATA:
-                assemble_data(context, current);
-                break;
-            case NODE_ADDRESS:
-                assemble_address(context, current);
-                break;
-            case NODE_ALIGN:
-                assemble_align(context, current);
-                break;
-            case NODE_SECTION:
-                context->region = current->mode;
-                break;
-            case NODE_RESERVE:
-                assemble_reserve(context, current);
-                break;
-            default:
-                break;
-        }
-        
+        if (assemble_node(context, current))
+            changed = true;
         current = current->next;
     }
     return changed;
+}
+
+bool assemble_node(Context *context, Node *node)
+{
+    switch (node->type)
+    {
+        case NODE_LABEL:
+            resolve_node_label(context, node);
+            break;
+        case NODE_SYMBOL:
+            resolve_node_symbol(context, node);
+            break;
+        case NODE_INSTRUCTION:
+            assemble_instruction(context, node);
+            break;
+        case NODE_DATA:
+            assemble_data(context, node);
+            break;
+        case NODE_ADDRESS:
+            assemble_address(context, node);
+            break;
+        case NODE_ALIGN:
+            assemble_align(context, node);
+            break;
+        case NODE_SECTION:
+            context->region = node->mode;
+            break;
+        case NODE_RESERVE:
+            assemble_reserve(context, node);
+            break;
+        default:
+            break;
+    }
+    return compare_expected(context, node);
 }
 
 void assemble_instruction(Context *context, Node *node)
@@ -186,6 +196,40 @@ void assemble_reserve(Context *context, Node *node)
     pad_bytes(context, &node->trace, value);
 }
 
+bool resolve_node_symbol(Context *context, Node *node)
+{
+    int value;
+    if (resolve_expression(context->symbol_map, node->expression, &value))
+    {
+        int pvalue;
+        if (!resolve_symbol(context->symbol_map, node->name, &pvalue) 
+            || get_symbol(context->symbol_map, node->name)->value != value)
+        {
+            define_symbol(context, node->name, value);
+            return true;
+
+        }
+    }
+    return false;
+}
+
+bool resolve_node_label(Context *context, Node *node)
+{
+    int address = get_address(context);
+    int value = 0;
+    bool is_defined = resolve_symbol(context->symbol_map, node->name, &value);
+
+    if (context->final_pass && is_defined && value != address)
+    {
+        print_error(&node->trace, "Label \"%s\" at address %d is already defined", 
+            node->name, address);
+    }
+
+    define_symbol(context, node->name, address);
+
+    return value != address;
+}
+
 void write_bytes(Context *context, Trace *trace, unsigned char *bytes, int size)
 {
     if (context->final_pass)
@@ -230,5 +274,5 @@ void pad_bytes(Context *context, Trace *trace, int size)
     {
         set_address(context, get_address(context) + size);
     }
-
 }
+

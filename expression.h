@@ -25,7 +25,18 @@ enum expression_operation
     OPER_BIT_XOR,
     OPER_BIT_NOT,
     OPER_NEGATE,
-
+    OPER_SHIFT_LEFT,
+    OPER_SHIFT_RIGHT,
+    OPER_EQUAL,
+    OPER_NOT_EQUAL,
+    OPER_GREATER,
+    OPER_GREATER_EQUAL,
+    OPER_LESS,
+    OPER_LESS_EQUAL,
+    OPER_LOG_AND,
+    OPER_LOG_OR,
+    OPER_LOG_XOR,
+    OPER_LOG_NOT,
 };
 
 struct Expression;

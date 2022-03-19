@@ -3,7 +3,6 @@
 #include "parse.h"
 #include "parser.tab.h"
 #include "error.h"
-#include "syntax_tree.h"
 
 struct Path *path_cache;
 
@@ -22,9 +21,8 @@ Node *parse_file(char *filename, Node **final_node)
     trace.column = 1;
     global_trace = &trace;
 
-    /* Parse input file */
+    /* Parse input fil  */
 
-    initialize_node_tree();
     yyparse();
 
     Node *tree = get_tree();

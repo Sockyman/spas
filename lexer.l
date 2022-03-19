@@ -35,6 +35,22 @@
 "^"    { return BIT_XOR; }
 "~"    { return BIT_NOT; }
 
+"<<"    { return SHIFT_L; }
+">>"    { return SHIFT_R; }
+
+"&&"    { return LOG_AND; }
+"||"    { return LOG_OR; }
+"^^"    { return LOG_XOR; }
+
+"=="    { return EQUAL; }
+"!="    { return NOT_EQUAL; }
+">"     { return GREATER; }
+"<"     { return LESS; }
+">="    { return GREATER_EQUAL; }
+"<="    { return LESS_EQUAL; }
+
+"!"     { return LOG_NOT; }
+
 ".address"           { return D_ADDR; }
 ".byte"              { return D_BYTE; }
 ".word"              { return D_WORD; }
@@ -45,6 +61,10 @@
 
 ".section"          { return D_SECTION; }
 ".res"              { return D_RESERVE; }
+
+"." {
+    return DOT;
+}
 
 0x[0-9a-fA-F]+  {
     yylval.integer = strtol(yytext, NULL, 16);

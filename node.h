@@ -65,10 +65,28 @@ void free_node(Node *node);
 void print_node(Node *node);
 void fprint_node(FILE *file, Node *node);
 
+Node *new_instruction(char *name, int addressing_mode, Expression *operands);
+Node *new_symbol(char *name, Expression *value);
+Node *new_label(char *name);
+Node *new_data(int mode, Datalist *datalist);
+Node *new_address(Expression *expr);
+Node *new_align(Expression *expr);
+Node *new_include(const char *path, int mode);
+Node *new_section(const char *section);
+Node *new_reserve(Expression *expr);
+
 Datalist *new_datalist(Expression *expression);
 Datalist *new_data_string(char *string);
 Datalist *append_datalist(Datalist *datalist, Datalist *value);
 int datalist_size(int mode, Datalist *datalist);
+
+void free_tree(Node *tree);
+void print_tree(Node *tree);
+
+Node *push_node(Node *start, Node *end);
+
+void set_tree(Node *tree);
+Node *get_tree(void);
 
 #endif
 

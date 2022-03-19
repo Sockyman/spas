@@ -140,7 +140,8 @@ bool resolve_expression(Symbol *symbol_map, const Expression *expression, int *v
             {
                 int x;
                 int y;
-                if (resolve_expression(symbol_map, expression->value.dual_operand.x, &x) && resolve_expression(symbol_map, expression->value.dual_operand.y, &y))
+                if (resolve_expression(symbol_map, expression->value.dual_operand.x, &x) 
+                        && resolve_expression(symbol_map, expression->value.dual_operand.y, &y))
                 {
                     *value = resolve_operation(expression->operation, x, y);
                     return true;
@@ -173,6 +174,30 @@ int resolve_operation(int operation, int x, int y)
             return x ^ y;
         case OPER_BIT_NOT:
             return ~x;
+        case OPER_SHIFT_LEFT:
+            return x << y;
+        case OPER_SHIFT_RIGHT:
+            return x >> y;
+        case OPER_EQUAL:
+            return x == y;
+        case OPER_NOT_EQUAL:
+            return x != y;
+        case OPER_GREATER:
+            return x > y;
+        case OPER_GREATER_EQUAL:
+            return x >= y;
+        case OPER_LESS:
+            return x < y;
+        case OPER_LESS_EQUAL:
+            return x <= y;
+        case OPER_LOG_AND:
+            return x && y;
+        case OPER_LOG_OR:
+            return x || y;
+        case OPER_LOG_XOR:
+            return !((x && y) || !(x || y));
+        case OPER_LOG_NOT:
+            return !x;
     }
 
     // TODO: Improve error checking.
@@ -182,9 +207,7 @@ int resolve_operation(int operation, int x, int y)
 
 void bad_expression(Trace *trace, Expression *expression)
 {
-    char exstr[512];
-    sprint_expression(exstr, expression);
-    print_error(trace, "unable to resolve expression: %s.", exstr);
+    print_error(trace, "unable to resolve expression.");
 }
 
 void print_expression(const Expression *expression)
