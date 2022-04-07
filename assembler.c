@@ -247,7 +247,7 @@ void write_bytes(Context *context, Trace *trace, unsigned char *bytes, int size)
                 if (!new_output)
                 {
                     //TODO: Error
-                    printf("Error: Unable to reallocate output array.\n");
+                    fprintf(stderr, "Error: Unable to reallocate output array.\n");
                 }
                 context->output = new_output;
             }

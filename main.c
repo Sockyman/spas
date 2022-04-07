@@ -77,7 +77,7 @@ int main(int argc, char **argv)
             FILE *file;
             if (arguments.outfile) 
                 { file = fopen(arguments.outfile, "wb"); }
-            else 
+            else
                 { file = stdout; }
 
             assemble(file, tree);

@@ -64,11 +64,11 @@ typedef struct Expression
 } Expression;
 
 
-Expression *generate_symbolic_expression(const char *symbol);
-Expression *generate_integral_expression(int value);
+Expression *symbolic_expression(const char *symbol);
+Expression *integral_expression(int value);
 //Expression *generate_char_expression(const char *string);
-Expression *generate_single_operand_expression(int operation, Expression *operand);
-Expression *generate_dual_operand_expression(int operation, Expression *x, Expression *y);
+Expression *single_operand_expression(int operation, Expression *operand);
+Expression *dual_operand_expression(int operation, Expression *x, Expression *y);
 
 void free_expression(Expression *expression);
 bool resolve_expression(Symbol *symbol_map, const Expression *expression, int *value);

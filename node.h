@@ -68,6 +68,7 @@ void fprint_node(FILE *file, Node *node);
 Node *new_instruction(char *name, int addressing_mode, Expression *operands);
 Node *new_symbol(char *name, Expression *value);
 Node *new_label(char *name);
+
 Node *new_data(int mode, Datalist *datalist);
 Node *new_address(Expression *expr);
 Node *new_align(Expression *expr);

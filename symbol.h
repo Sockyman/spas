@@ -17,12 +17,6 @@ typedef struct StringList
     struct StringList *next;
 } StringList;
 
-typedef struct Identifier
-{
-    bool local;
-    StringList *id;
-} Identifier;
-
 bool define_symbol(Context *context, char *name, int value);
 Symbol *get_symbol(Symbol *symbol_map, char *name);
 bool resolve_symbol(Symbol *symbol_map, char *name, int *value);

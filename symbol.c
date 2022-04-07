@@ -91,6 +91,5 @@ void print_symbol_map(Symbol *symbol_map)
         printf("\n");
         current = current->next;
     }
-
 }
 

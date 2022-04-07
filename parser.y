@@ -2,6 +2,7 @@
 {
     #include "expression.h"
     #include "node.h"
+    #include "identifier.h"
     extern FILE *yyin;
 }
 
@@ -19,6 +20,7 @@
 #include "instruction.h"
 #include "trace.h"
 #include "error.h"
+#include "identifier.h"
 
 void yyerror(const char *s);
 extern int yylex();
@@ -32,6 +34,7 @@ extern int yylex();
     Expression *expr;
     Datalist *datal;
     Node *node;
+    Identifier *id;
 }
 
 %token IDENTIFIER STRING
@@ -43,7 +46,7 @@ extern int yylex();
 %token BIT_AND "&" BIT_OR "|" BIT_NOT "~" BIT_XOR "^"
 %token ADD "+" SUBTRACT "-" MULTIPLY "*" DIVIDE "/"
 %token SHIFT_L "<<" SHIFT_R ">>"
-%token EQUAL "==" NOT_EQUAl "!=" GREATER ">" GREATER_EQUAL ">=" LESS "<" LESS_EQUAL "<="
+%token EQUAL "==" NOT_EQUAL "!=" GREATER ">" GREATER_EQUAL ">=" LESS "<" LESS_EQUAL "<="
 %token LOG_AND "&&" LOG_OR "||" LOG_NOT "!" LOG_XOR "^^"
 %token D_ADDR D_BYTE D_WORD D_INCLUDE D_INCLUDE_ONCE D_INCLUDE_BIN D_ALIGN
 %token D_SECTION D_RESERVE
@@ -55,6 +58,7 @@ extern int yylex();
 %type <expr> expression
 %type <datal> data_list data_entry
 %type <node> statement statement_list instruction directive symbol label
+%type <id> ident
 
 
 %left LOG_OR
@@ -74,13 +78,13 @@ extern int yylex();
 %%
 
 program
-    : statement_list { set_tree($1); }
+    : statement_list    { set_tree($1); }
     | %empty
     ;
 
 statement_list
-    : statement statement_list { $$ = push_node($1, $2); }
-    | statement { $$ = $1; }
+    : statement statement_list  { $$ = push_node($1, $2); }
+    | statement     { $$ = $1; }
     ;
 
 statement
@@ -88,7 +92,7 @@ statement
     | symbol
     | label
     | directive
-    | "\n"  { $$ = NULL; }
+    | "\n"          { $$ = NULL; }
     ;
 
 symbol
@@ -96,7 +100,7 @@ symbol
     ;
 
 label
-    : IDENTIFIER ":" statement          { $$ = new_label($1); free($1); }
+    : IDENTIFIER ":" statement      { $$ = new_label($1); free($1); }
     ;
 
 directive
@@ -131,36 +135,35 @@ instruction
     ;
 
 expression
-    : expression "+" expression                     { $$ = generate_dual_operand_expression(OPER_ADD, $1, $3); }
-    | expression "-" expression   %prec ADD         { $$ = generate_dual_operand_expression(OPER_SUBTRACT, $1, $3); }   
-    | "-" expression              %prec BIT_AND     { $$ = generate_single_operand_expression(OPER_NEGATE, $2); }
-    | expression "*" expression                     { $$ = generate_dual_operand_expression(OPER_MULTIPLY, $1, $3); }
-    | expression "/" expression                     { $$ = generate_dual_operand_expression(OPER_DIVIDE, $1, $3); }
-    | "(" expression ")"                            { $$ = $2; }
-    | expression "&" expression                     { $$ = generate_dual_operand_expression(OPER_BIT_AND, $1, $3); }
-    | expression "|" expression                     { $$ = generate_dual_operand_expression(OPER_BIT_OR, $1, $3); }
-    | expression "^" expression                     { $$ = generate_dual_operand_expression(OPER_BIT_XOR, $1, $3); }
-    | "~" expression              %prec BIT_AND     { $$ = generate_single_operand_expression(OPER_BIT_NOT, $2); }
-    | "!" expression                                { $$ = generate_single_operand_expression(OPER_LOG_NOT, $2); }
-    | expression "<<" expression                    { $$ = generate_dual_operand_expression(OPER_SHIFT_LEFT, $1, $3); }
-    | expression ">>" expression                    { $$ = generate_dual_operand_expression(OPER_SHIFT_RIGHT, $1, $3); }
-    | expression "==" expression                    { $$ = generate_dual_operand_expression(OPER_EQUAL, $1, $3); }
-    | expression "!=" expression                    { $$ = generate_dual_operand_expression(OPER_NOT_EQUAL, $1, $3); }
-    | expression "&&" expression                    { $$ = generate_dual_operand_expression(OPER_LOG_AND, $1, $3); }
-    | expression "||" expression                    { $$ = generate_dual_operand_expression(OPER_LOG_OR, $1, $3); }
-    | expression "^^" expression                    { $$ = generate_dual_operand_expression(OPER_LOG_XOR, $1, $3); }
-    | expression ">" expression                     { $$ = generate_dual_operand_expression(OPER_GREATER, $1, $3); }
-    | expression "<" expression                     { $$ = generate_dual_operand_expression(OPER_LESS, $1, $3); }
-    | expression ">=" expression                    { $$ = generate_dual_operand_expression(OPER_GREATER_EQUAL, $1, $3); }
-    | expression "<=" expression                    { $$ = generate_dual_operand_expression(OPER_LESS_EQUAL, $1, $3); }
-    | INTEGER                                       { $$ = generate_integral_expression($1); }
-    | IDENTIFIER                                    { $$ = generate_symbolic_expression($1); free($1); }
+    : expression "+" expression         { $$ = dual_operand_expression(OPER_ADD, $1, $3); }
+    | expression "-" expression         { $$ = dual_operand_expression(OPER_SUBTRACT, $1, $3); }
+    | "-" expression    %prec BIT_AND   { $$ = single_operand_expression(OPER_NEGATE, $2); }
+    | "+" expression    %prec BIT_AND   { $$ = $2; }
+    | expression "*" expression         { $$ = dual_operand_expression(OPER_MULTIPLY, $1, $3); }
+    | expression "/" expression         { $$ = dual_operand_expression(OPER_DIVIDE, $1, $3); }
+    | "(" expression ")"                { $$ = $2; }
+    | expression "&" expression         { $$ = dual_operand_expression(OPER_BIT_AND, $1, $3); }
+    | expression "|" expression         { $$ = dual_operand_expression(OPER_BIT_OR, $1, $3); }
+    | expression "^" expression         { $$ = dual_operand_expression(OPER_BIT_XOR, $1, $3); }
+    | "~" expression    %prec BIT_AND   { $$ = single_operand_expression(OPER_BIT_NOT, $2); }
+    | "!" expression                    { $$ = single_operand_expression(OPER_LOG_NOT, $2); }
+    | expression "<<" expression        { $$ = dual_operand_expression(OPER_SHIFT_LEFT, $1, $3); }
+    | expression ">>" expression        { $$ = dual_operand_expression(OPER_SHIFT_RIGHT, $1, $3); }
+    | expression "==" expression        { $$ = dual_operand_expression(OPER_EQUAL, $1, $3); }
+    | expression "!=" expression        { $$ = dual_operand_expression(OPER_NOT_EQUAL, $1, $3); }
+    | expression "&&" expression        { $$ = dual_operand_expression(OPER_LOG_AND, $1, $3); }
+    | expression "||" expression        { $$ = dual_operand_expression(OPER_LOG_OR, $1, $3); }
+    | expression "^^" expression        { $$ = dual_operand_expression(OPER_LOG_XOR, $1, $3); }
+    | expression ">" expression         { $$ = dual_operand_expression(OPER_GREATER, $1, $3); }
+    | expression "<" expression         { $$ = dual_operand_expression(OPER_LESS, $1, $3); }
+    | expression ">=" expression        { $$ = dual_operand_expression(OPER_GREATER_EQUAL, $1, $3); }
+    | expression "<=" expression        { $$ = dual_operand_expression(OPER_LESS_EQUAL, $1, $3); }
+    | INTEGER                           { $$ = integral_expression($1); }
+    | IDENTIFIER                        { $$ = symbolic_expression($1); free($1); }
     ;
 
-id
-    : DOT id
-    | IDENTIFIER DOT id
-    | IDENTIFIER
+ident
+    : IDENTIFIER
     ;
 
 %%

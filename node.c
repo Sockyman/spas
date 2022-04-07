@@ -63,6 +63,7 @@ Node *new_node(int type, const char *name, int mode, Expression *expression, Dat
 
 Node *new_instruction(char *name, int addressing_mode, Expression *operands)
 {
+    fprintf(stderr, " %s\n", name);
     return new_node(NODE_INSTRUCTION, name, addressing_mode, operands, NULL, *global_trace);
 }
 
@@ -73,6 +74,7 @@ Node *new_symbol(char *name, Expression *value)
 
 Node *new_label(char *name)
 {
+    fprintf(stderr, "%s:\n", name);
     return new_node(NODE_LABEL, name, 0, NULL, NULL, *global_trace);
 }
 

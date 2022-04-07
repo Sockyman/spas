@@ -21,7 +21,7 @@ Node *parse_file(char *filename, Node **final_node)
     trace.column = 1;
     global_trace = &trace;
 
-    /* Parse input fil  */
+    /* Parse input file  */
 
     yyparse();
 

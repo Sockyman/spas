@@ -8,7 +8,7 @@
 #include "expression.h"
 
 
-Expression *generate_symbolic_expression(const char *symbol)
+Expression *symbolic_expression(const char *symbol)
 {
     Expression *expr = malloc(sizeof(Expression));
     expr->type = EXPR_SYMBOLIC;
@@ -16,7 +16,7 @@ Expression *generate_symbolic_expression(const char *symbol)
     return expr;
 }
 
-Expression *generate_integral_expression(int value)
+Expression *integral_expression(int value)
 {
     Expression *expr = malloc(sizeof(Expression));
     expr->type = EXPR_INTEGRAL;
@@ -24,7 +24,7 @@ Expression *generate_integral_expression(int value)
     return expr;
 }
 
-Expression *generate_char_expression(const char *string)
+Expression *char_expression(const char *string)
 {
     unsigned char value = 0;
     int len = strlen(string);
@@ -66,10 +66,10 @@ Expression *generate_char_expression(const char *string)
         print_error(global_trace, "invalid character length.");
     }
 
-    return generate_integral_expression(value);
+    return integral_expression(value);
 }
 
-Expression *generate_single_operand_expression(int operation, Expression *operand)
+Expression *single_operand_expression(int operation, Expression *operand)
 {
     Expression *expr = malloc(sizeof(Expression));
     expr->type = EXPR_SINGLE_OPERAND;
@@ -78,7 +78,7 @@ Expression *generate_single_operand_expression(int operation, Expression *operan
     return expr;
 }
 
-Expression *generate_dual_operand_expression(int operation, Expression *x, Expression *y)
+Expression *dual_operand_expression(int operation, Expression *x, Expression *y)
 {
     Expression *expr = malloc(sizeof(Expression));
     expr->type = EXPR_DUAL_OPERAND;
