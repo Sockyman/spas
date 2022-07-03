@@ -7,6 +7,7 @@
 #include "instruction.h"
 
 Node *node_tree;
+int node_count = 0;
 
 void print_node(Node *node)
 {
@@ -46,11 +47,13 @@ void fprint_node(FILE *file, Node *node)
     }
 }
 
-Node *new_node(int type, const char *name, int mode, Expression *expression, Datalist *datalist, Trace trace)
+Node *new_node(int type, const char *name, Identifier *id, int mode, Expression *expression, Datalist *datalist, Trace trace)
 {
     Node *node = malloc(sizeof(Node));
+    node->unique = node_count++;
     node->type = type;
     node->name = strdup(name);
+    node->id = id;
     node->mode = mode;
     node->expression = expression;
     node->datalist = datalist;
@@ -63,40 +66,38 @@ Node *new_node(int type, const char *name, int mode, Expression *expression, Dat
 
 Node *new_instruction(char *name, int addressing_mode, Expression *operands)
 {
-    fprintf(stderr, " %s\n", name);
-    return new_node(NODE_INSTRUCTION, name, addressing_mode, operands, NULL, *global_trace);
+    return new_node(NODE_INSTRUCTION, name, NULL, addressing_mode, operands, NULL, *global_trace);
 }
 
-Node *new_symbol(char *name, Expression *value)
+Node *new_symbol(Identifier *name, Expression *value)
 {
-    return new_node(NODE_SYMBOL, name, 0, value, NULL, *global_trace);
+    return new_node(NODE_SYMBOL, "", name, 0, value, NULL, *global_trace);
 }
 
-Node *new_label(char *name)
+Node *new_label(Identifier *name)
 {
-    fprintf(stderr, "%s:\n", name);
-    return new_node(NODE_LABEL, name, 0, NULL, NULL, *global_trace);
+    return new_node(NODE_LABEL, "", name, 0, NULL, NULL, *global_trace);
 }
 
 Node *new_data(int mode, Datalist *datalist)
 {
-    return new_node(NODE_DATA, "", mode, NULL, datalist, *global_trace);
+    return new_node(NODE_DATA, "", NULL, mode, NULL, datalist, *global_trace);
 }
 
 Node *new_address(Expression *expr)
 {
-    return new_node(NODE_ADDRESS, "", 0, expr, NULL, *global_trace);
+    return new_node(NODE_ADDRESS, "", NULL, 0, expr, NULL, *global_trace);
 }
 
 Node *new_align(Expression *expr)
 {
-    return new_node(NODE_ALIGN, "", 0, expr, NULL, *global_trace);
+    return new_node(NODE_ALIGN, "", NULL, 0, expr, NULL, *global_trace);
 
 }
 
 Node *new_include(const char *path, int mode)
 {
-    return new_node(NODE_INCLUDE, path, mode, NULL, NULL, *global_trace);
+    return new_node(NODE_INCLUDE, path, NULL, mode, NULL, NULL, *global_trace);
 }
 
 Node *new_section(const char *section)
@@ -110,12 +111,17 @@ Node *new_section(const char *section)
     {
         print_error(global_trace, "region does not exist: %s.", section);
     }
-    return new_node(NODE_SECTION, "", mode, NULL, NULL, *global_trace);
+    return new_node(NODE_SECTION, "", NULL, mode, NULL, NULL, *global_trace);
 }
 
 Node *new_reserve(Expression *expr)
 {
-    return new_node(NODE_RESERVE, "", 0, expr, NULL, *global_trace);
+    return new_node(NODE_RESERVE, "", NULL, 0, expr, NULL, *global_trace);
+}
+
+Node *new_macro(char *name, int addressing, Node *nodes)
+{
+
 }
 
 
@@ -125,6 +131,10 @@ void free_node(Node *node)
     if (node->expression)
     {
         free_expression(node->expression);
+    }
+    if (node->id)
+    {
+        free_identifier(node->id);
     }
 
     Datalist *current = node->datalist;

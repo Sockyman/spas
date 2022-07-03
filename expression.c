@@ -8,11 +8,14 @@
 #include "expression.h"
 
 
-Expression *symbolic_expression(const char *symbol)
+Expression *symbolic_expression(Identifier *id)
 {
     Expression *expr = malloc(sizeof(Expression));
     expr->type = EXPR_SYMBOLIC;
-    expr->value.symbol = strdup(symbol);
+    if (id)
+        expr->value.symbol = id;
+    else
+        expr->value.symbol = NULL;
     return expr;
 }
 
@@ -88,6 +91,16 @@ Expression *dual_operand_expression(int operation, Expression *x, Expression *y)
     return expr;
 }
 
+Expression *ternary_expression(Expression *condition, Expression *a, Expression *b)
+{
+    Expression *expr = malloc(sizeof(Expression));
+    expr->type = EXPR_TERNARY;
+    expr->value.dual_operand.z = condition;
+    expr->value.dual_operand.x = a;
+    expr->value.dual_operand.y = b;
+    return expr;
+}
+
 void free_expression(Expression *expression)
 {
     switch (expression->type)
@@ -95,11 +108,13 @@ void free_expression(Expression *expression)
         case EXPR_INTEGRAL:
             break;
         case EXPR_SYMBOLIC:
-            free(expression->value.symbol);
+            free_identifier(expression->value.symbol);
             break;
         case EXPR_SINGLE_OPERAND:
             free_expression(expression->value.single_operand);
             break;
+        case EXPR_TERNARY:
+            free_expression(expression->value.dual_operand.z);
         case EXPR_DUAL_OPERAND:
             free_expression(expression->value.dual_operand.x);
             free_expression(expression->value.dual_operand.y);
@@ -143,7 +158,25 @@ bool resolve_expression(Symbol *symbol_map, const Expression *expression, int *v
                 if (resolve_expression(symbol_map, expression->value.dual_operand.x, &x) 
                         && resolve_expression(symbol_map, expression->value.dual_operand.y, &y))
                 {
+                    if ((y == 0) && (expression->operation == OPER_DIVIDE || expression->operation == OPER_MOD))
+                    {
+                        return false;
+                    }
                     *value = resolve_operation(expression->operation, x, y);
+                    return true;
+                }
+                break;
+            }
+        case EXPR_TERNARY:
+            {
+                int condition;
+                int a;
+                int b;
+                if (resolve_expression(symbol_map, expression->value.dual_operand.z, &condition)
+                        && resolve_expression(symbol_map, expression->value.dual_operand.x, &a)
+                        && resolve_expression(symbol_map, expression->value.dual_operand.y, &b))
+                {
+                    *value = condition ? a : b;
                     return true;
                 }
                 break;
@@ -163,7 +196,14 @@ int resolve_operation(int operation, int x, int y)
         case OPER_MULTIPLY:
             return x * y;
         case OPER_DIVIDE:
+            /*if (y == 0)
+            {
+                print_error(NULL, "divide by zero");
+                return 0;
+            }*/
             return x / y;
+        case OPER_MOD:
+            return x % y;
         case OPER_NEGATE:
             return -x;
         case OPER_BIT_AND:
@@ -229,7 +269,7 @@ void sprint_expression(char *string, const Expression *expression)
     switch (expression->type)
     {
         case EXPR_SYMBOLIC:
-            sprintf(s, "%s", expression->value.symbol);
+            //sprintf(s, "%s", expression->value.symbol);
             strcat(string, s);
             break;
         case EXPR_INTEGRAL:
@@ -256,6 +296,9 @@ void sprint_expression(char *string, const Expression *expression)
             sprintf(s, ")");
             strcat(string, s);
             break;
+        case EXPR_TERNARY:
+            sprintf(s, "TERNARY");
+            break;
     }
 }
 
@@ -271,6 +314,8 @@ char *operation_string(int operation)
             return "*";
         case OPER_DIVIDE:
             return "/";
+        case OPER_MOD:
+            return "%";
         case OPER_NEGATE:
             return "-";
         case OPER_BIT_AND:
@@ -282,6 +327,6 @@ char *operation_string(int operation)
         case OPER_BIT_NOT:
             return "~";
     }
-    return "???";
+    return "UNKNOWN";
 }
 

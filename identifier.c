@@ -3,11 +3,12 @@
 #include "identifier.h"
 #include "error.h"
 
+extern Trace *global_trace;
+
 Identifier *scope = NULL;
 
 Identifier *get_identifier(char *str)
 {
-
     Identifier *id = NULL;
     char *ptr = str;
 
@@ -17,7 +18,7 @@ Identifier *get_identifier(char *str)
     {
         if (!toadd)
         {
-            print_error(NULL, "invalid identifier.");
+            print_error(global_trace, "invalid identifier.");
             free_identifier(id);
             return NULL;
         }
@@ -36,19 +37,20 @@ Identifier *get_identifier(char *str)
 
         if (occur[1] == '.')
         {
-            print_error(NULL, "invalid identifier.");
+            print_error(global_trace, "invalid identifier.");
             free_identifier(id);
             return NULL;
         }
 
         char buff[128];
         strncpy(buff, ptr, occur - ptr);
+        buff[occur - ptr] = 0;
         id = identifier_add_scope(id, buff);
         ptr = occur + 1;
     }
     if (strlen(ptr) == 0)
     {
-        print_error(NULL, "invalid identifier.");
+        print_error(global_trace, "invalid identifier.");
         free_identifier(id);
         return NULL;
     }
@@ -109,6 +111,18 @@ bool compare_identifier(Identifier *id_0, Identifier *id_1)
         }
     }
     return false;
+}
+
+Identifier *clone_identifier(Identifier *to_clone)
+{
+    Identifier *id = get_identifier(to_clone->name);
+    Identifier *current = to_clone->next;
+    while (current)
+    {
+        identifier_add_scope(id, current->name);
+        current = current->next;
+    }
+    return id;
 }
 
 void print_identifier(FILE *file, Identifier *id)

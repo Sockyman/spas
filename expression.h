@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "symbol.h"
 #include "trace.h"
+#include "identifier.h"
 
 enum expression_type
 {
@@ -12,6 +13,7 @@ enum expression_type
     EXPR_SYMBOLIC,
     EXPR_SINGLE_OPERAND,
     EXPR_DUAL_OPERAND,
+    EXPR_TERNARY,
 };
 
 enum expression_operation
@@ -20,6 +22,7 @@ enum expression_operation
     OPER_SUBTRACT,
     OPER_MULTIPLY,
     OPER_DIVIDE,
+    OPER_MOD,
     OPER_BIT_AND,
     OPER_BIT_OR,
     OPER_BIT_XOR,
@@ -45,12 +48,13 @@ struct dual_operands
 {
     struct Expression *x;
     struct Expression *y;
+    struct Expression *z;
 };
 
 union expression_value
 {
     int integer;
-    char *symbol;
+    Identifier *symbol;
     struct Expression *single_operand;
     struct dual_operands dual_operand;
 };
@@ -64,11 +68,12 @@ typedef struct Expression
 } Expression;
 
 
-Expression *symbolic_expression(const char *symbol);
+Expression *symbolic_expression(Identifier *id);
 Expression *integral_expression(int value);
 //Expression *generate_char_expression(const char *string);
 Expression *single_operand_expression(int operation, Expression *operand);
 Expression *dual_operand_expression(int operation, Expression *x, Expression *y);
+Expression *ternary_expression(Expression *condition, Expression *a, Expression *b);
 
 void free_expression(Expression *expression);
 bool resolve_expression(Symbol *symbol_map, const Expression *expression, int *value);

@@ -16,7 +16,7 @@ Identifier *get_identifier(char *str);
 void free_identifier(Identifier *id);
 void enter_scope(Identifier *id);
 bool compare_identifier(Identifier *id_0, Identifier *id_1);
-
+Identifier *clone_identifier(Identifier *to_clone);
 void print_identifier(FILE *file, Identifier *id);
 
 #endif

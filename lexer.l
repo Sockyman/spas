@@ -29,6 +29,7 @@
 "-"    { return SUBTRACT; }
 "*"    { return MULTIPLY; }
 "/"    { return DIVIDE; }
+"%"    { return MOD; }
 
 "&"    { return BIT_AND; }
 "|"    { return BIT_OR; }
@@ -50,6 +51,7 @@
 "<="    { return LESS_EQUAL; }
 
 "!"     { return LOG_NOT; }
+"?"     { return QMARK; }
 
 "%address"           { return D_ADDR; }
 "%byte"              { return D_BYTE; }
@@ -61,6 +63,9 @@
 
 "%section"          { return D_SECTION; }
 "%res"              { return D_RESERVE; }
+
+"%macro"            { return D_MACRO; }
+"%endmacro"         { return D_ENDMACRO; }
 
 "." {
     return DOT;

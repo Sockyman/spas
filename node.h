@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "expression.h"
+#include "identifier.h"
 #include "trace.h"
 
 enum node_type
@@ -49,25 +50,27 @@ typedef struct Datalist
 
 typedef struct Node
 {
+    int unique;
     char *name;
+    Identifier *id;
     int type;
     int mode;
     Expression *expression;
     Datalist *datalist;
-
     Trace trace;
     struct Node *next;
 } Node;
 
-Node *new_node(int type, const char *name, int mode, Expression *expression, Datalist *datalist, Trace trace);
+Node *new_node(int type, const char *name, Identifier *id, int mode,
+        Expression *expression, Datalist *datalist, Trace trace);
 
 void free_node(Node *node);
 void print_node(Node *node);
 void fprint_node(FILE *file, Node *node);
 
 Node *new_instruction(char *name, int addressing_mode, Expression *operands);
-Node *new_symbol(char *name, Expression *value);
-Node *new_label(char *name);
+Node *new_symbol(Identifier *name, Expression *value);
+Node *new_label(Identifier *name);
 
 Node *new_data(int mode, Datalist *datalist);
 Node *new_address(Expression *expr);
@@ -75,6 +78,7 @@ Node *new_align(Expression *expr);
 Node *new_include(const char *path, int mode);
 Node *new_section(const char *section);
 Node *new_reserve(Expression *expr);
+Node *new_macro(char *name, int addressing, Node *nodes);
 
 Datalist *new_datalist(Expression *expression);
 Datalist *new_data_string(char *string);

@@ -9,9 +9,9 @@
 #include "error.h"
 #include "parse.h"
 
-const char *argp_program_version = "SPDR assembler v0.1";
+const char *argp_program_version = "SPDR assembler v5.0.";
 const char *argp_program_bug_address = "<sockymanthesock@gmail.com>";
-const char doc[] = "SPDR assembler.";
+const char doc[] = "Converts SPDR assmebly language into SPDR machine language.";
 const char args_doc[] = "INFILE";
 static struct argp_option options[] =
 {
@@ -49,6 +49,8 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 Trace *global_trace;
 
+int *integer;
+
 int main(int argc, char **argv)
 {
     /* Parse command line arguments */
@@ -68,7 +70,6 @@ int main(int argc, char **argv)
 
         Node *end;
         Node *tree = parse_file(name, &end);
-        //print_tree(tree);
 
         /* Assemble */
 
@@ -77,9 +78,8 @@ int main(int argc, char **argv)
             FILE *file;
             if (arguments.outfile) 
                 { file = fopen(arguments.outfile, "wb"); }
-            else
+            else 
                 { file = stdout; }
-
             assemble(file, tree);
             if (arguments.outfile) 
                 { fclose(file); }

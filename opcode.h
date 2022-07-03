@@ -12,6 +12,7 @@ enum addressing_mode
     ADDR_PAGED_X,
     ADDR_PAGED_Y,
     ADDR_INDEXED,
+    ADDR_FUNCTION,
 };
 
 typedef struct Instruction

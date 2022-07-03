@@ -67,7 +67,6 @@ Node *parse_file(char *filename, Node **final_node)
     return tree;
 }
 
-
 void resolve_filename(char *string, const char *from, const char *filename)
 {
     char stdlib_prefix[] = "std:";
@@ -105,7 +104,7 @@ void initialize_path_cache(void)
 
 void free_path_cache(void)
 {
-    struct Path *current;
+    struct Path *current = path_cache;
     while (current != NULL)
     {
         struct Path *next = current->next;

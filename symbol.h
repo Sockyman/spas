@@ -3,10 +3,11 @@
 
 #include <stdbool.h>
 #include "context.h"
+#include "identifier.h"
 
 typedef struct Symbol
 {
-    char *key;
+    Identifier *key;
     int value;
     struct Symbol *next;
 } Symbol;
@@ -17,9 +18,9 @@ typedef struct StringList
     struct StringList *next;
 } StringList;
 
-bool define_symbol(Context *context, char *name, int value);
-Symbol *get_symbol(Symbol *symbol_map, char *name);
-bool resolve_symbol(Symbol *symbol_map, char *name, int *value);
+bool define_symbol(Context *context, Identifier *name, int value);
+Symbol *get_symbol(Symbol *symbol_map, Identifier *name);
+bool resolve_symbol(Symbol *symbol_map, Identifier *identifier, int *value);
 
 void free_symbol(Symbol *symbol);
 void print_symbol(Symbol *symbol);

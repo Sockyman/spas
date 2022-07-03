@@ -2,15 +2,16 @@
 #include <string.h>
 #include <stdio.h>
 #include "symbol.h"
+#include "identifier.h"
 
 
-bool define_symbol(Context *context, char *name, int value)
+bool define_symbol(Context *context, Identifier *name, int value)
 {
     Symbol *symbol = get_symbol(context->symbol_map, name);
     if (!symbol)
     {
         symbol = malloc(sizeof(Symbol));
-        symbol->key = strdup(name);
+        symbol->key = clone_identifier(name);
         symbol->next = NULL;
         symbol->value = value;
 
@@ -33,12 +34,12 @@ bool define_symbol(Context *context, char *name, int value)
     return true;
 }
 
-Symbol *get_symbol(Symbol *symbol_map, char *name)
+Symbol *get_symbol(Symbol *symbol_map, Identifier *name)
 {
     Symbol *current = symbol_map;
     while (current != NULL)
     {
-        if (!strcmp(current->key, name))
+        if (compare_identifier(current->key, name))
         {
             return current;
         }
@@ -47,7 +48,7 @@ Symbol *get_symbol(Symbol *symbol_map, char *name)
     return NULL;
 }
 
-bool resolve_symbol(Symbol *symbol_map, char *name, int *value)
+bool resolve_symbol(Symbol *symbol_map, Identifier *name, int *value)
 {
     Symbol *symbol = get_symbol(symbol_map, name);
     if (symbol)
@@ -60,7 +61,7 @@ bool resolve_symbol(Symbol *symbol_map, char *name, int *value)
 
 void free_symbol(Symbol *symbol)
 {
-    free(symbol->key);
+    free_identifier(symbol->key);
     free(symbol);
 }
 

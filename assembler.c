@@ -10,7 +10,7 @@
 void assemble(FILE *file, Node *nodes)
 {
     Symbol *symbol_map = malloc(sizeof(Symbol));
-    symbol_map->key = strdup("NULL");
+    symbol_map->key = get_identifier("NULL");
     symbol_map->value = 0;
     symbol_map->next = NULL;
 
@@ -51,6 +51,7 @@ bool assembler_pass(Context *context, Node *nodes)
 {
     context->address_text = 0x0;
     context->address_data = 0x8000;
+    context->region = SECTION_TEXT;
     Node *current = nodes;
     context->expected_value_head = context->expected_values;
     bool changed = false;
@@ -137,7 +138,7 @@ void assemble_instruction(Context *context, Node *node)
         }
     }
 
-    write_bytes(context, &node->trace, to_write, size);
+    write_bytes(context, &node->trace, to_write, abs(size));
 }
 
 void assemble_data(Context *context, Node *node)
@@ -202,10 +203,10 @@ bool resolve_node_symbol(Context *context, Node *node)
     if (resolve_expression(context->symbol_map, node->expression, &value))
     {
         int pvalue;
-        if (!resolve_symbol(context->symbol_map, node->name, &pvalue) 
-            || get_symbol(context->symbol_map, node->name)->value != value)
+        if (!resolve_symbol(context->symbol_map, node->id, &pvalue) 
+            || get_symbol(context->symbol_map, node->id)->value != value)
         {
-            define_symbol(context, node->name, value);
+            define_symbol(context, node->id, value);
             return true;
 
         }
@@ -217,15 +218,16 @@ bool resolve_node_label(Context *context, Node *node)
 {
     int address = get_address(context);
     int value = 0;
-    bool is_defined = resolve_symbol(context->symbol_map, node->name, &value);
+    bool is_defined = resolve_symbol(context->symbol_map, node->id, &value);
 
     if (context->final_pass && is_defined && value != address)
     {
-        print_error(&node->trace, "Label \"%s\" at address %d is already defined", 
-            node->name, address);
+        print_error(&node->trace, 
+                "Label \"%s\" at address %d is already defined", 
+                node->name, address);
     }
 
-    define_symbol(context, node->name, address);
+    define_symbol(context, node->id, address);
 
     return value != address;
 }
@@ -246,8 +248,8 @@ void write_bytes(Context *context, Trace *trace, unsigned char *bytes, int size)
                 char *new_output = realloc(context->output, context->capacity);
                 if (!new_output)
                 {
-                    //TODO: Error
-                    fprintf(stderr, "Error: Unable to reallocate output array.\n");
+                    fprintf(stderr, 
+                            "Error: Unable to reallocate output array.\n");
                 }
                 context->output = new_output;
             }
