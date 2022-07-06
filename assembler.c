@@ -102,7 +102,7 @@ bool assemble_node(Context *context, Node *node)
 void assemble_instruction(Context *context, Node *node)
 {
     unsigned char to_write[3];
-    int size = abs(instruction_size(node->mode));
+    int size = instruction_size(node->mode);
 
     if (context->final_pass)
     {
@@ -114,7 +114,7 @@ void assemble_instruction(Context *context, Node *node)
                     get_addressing_mode_name(node->mode));
             }
         }
-    
+
         if (size != 1)
         {
             int value = 0;

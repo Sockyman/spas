@@ -79,7 +79,7 @@ void free_symbol_map(Symbol *symbol_map)
 
 void print_symbol(Symbol *symbol)
 {
-    printf("{ %s: %d }", symbol->key, symbol->value);
+    fprintf(stderr, "{ %s: %d }", symbol->key->name, symbol->value);
 }
 
 void print_symbol_map(Symbol *symbol_map)
