@@ -16,6 +16,7 @@ const char args_doc[] = "INFILE";
 static struct argp_option options[] =
 {
 	{ "output", 'o', "OUTFILE", 0, "File to write to" },
+    { "symbols", 'y', 0, 0, "Print the value of assembler symbols" },
     { "print", 'p', 0, 0, "Output in plaintext" },
     { 0 }
 };
@@ -25,6 +26,7 @@ struct arguments
     char *infile;
     char *outfile;
     bool pretty_print;
+    bool symbols;
 };
 
 error_t parse_opt(int key, char *arg, struct argp_state *state)
@@ -37,6 +39,9 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
             break;
         case 'p':
             arguments->pretty_print = true;
+            break;
+        case 'y':
+            arguments->symbols = true;
             break;
         case ARGP_KEY_ARG:
             arguments->infile = arg;
@@ -59,6 +64,7 @@ int main(int argc, char **argv)
     arguments.infile = NULL;
     arguments.outfile = NULL;
     arguments.pretty_print = false;
+    arguments.symbols = false;
 
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
@@ -80,7 +86,7 @@ int main(int argc, char **argv)
                 { file = fopen(arguments.outfile, "wb"); }
             else 
                 { file = stdout; }
-            assemble(file, tree);
+            assemble(file, tree, arguments.symbols);
             if (arguments.outfile) 
                 { fclose(file); }
         }

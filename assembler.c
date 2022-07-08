@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "node.h"
 #include "symbol.h"
 #include "assembler.h"
 #include "instruction.h"
 #include "error.h"
 
-void assemble(FILE *file, Node *nodes)
+void assemble(FILE *file, Node *nodes, bool print_symbols)
 {
     Symbol *symbol_map = malloc(sizeof(Symbol));
     symbol_map->key = get_identifier("NULL");
@@ -28,7 +29,8 @@ void assemble(FILE *file, Node *nodes)
         }
         //printf("iterations: %d\n", iterations);
         if (iterations >= MAX_ITERATIONS)
-            print_error(NULL, "program cannot be resolved in maximum iterations.");
+            print_error(NULL, 
+                    "program cannot be resolved in maximum iterations.");
 
         if (!error_count())
         {
@@ -41,6 +43,33 @@ void assemble(FILE *file, Node *nodes)
             }
         }
     }
+    
+    if (print_symbols)
+    {
+        Symbol *current = context.symbol_map;
+        while (current)
+        {
+            if (!strcmp(current->key->name, "NULL"))
+            {
+                current = current->next;
+                continue;
+            }
+            Identifier *id = current->key;
+            while (id)
+            {
+                fprintf(stderr, "%s", id->name);
+                id = id->next;
+                if (id)
+                {
+                    fprintf(stderr, ".");
+                }
+            }
+            fprintf(stderr, "\t= %04x (%d)\n", current->value, current->value);
+            current = current->next;
+        }
+        fprintf(stderr, "\n");
+    }
+
     free_symbol_map(context.symbol_map);
     free_expected_values(context.expected_values);
     free(context.output);

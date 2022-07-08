@@ -11,7 +11,7 @@
 
 #define MAX_ITERATIONS 32
 
-void assemble(FILE *file, Node *nodes);
+void assemble(FILE *file, Node *nodes, bool print_symbols);
 bool assembler_pass(Context *context, Node *nodes);
 bool assemble_node(Context *context, Node *node);
 void assemble_instruction(Context *context, Node *node);
