@@ -41,7 +41,6 @@ void assemble(FILE *file, Node *nodes)
             }
         }
     }
-
     free_symbol_map(context.symbol_map);
     free_expected_values(context.expected_values);
     free(context.output);
@@ -137,7 +136,6 @@ void assemble_instruction(Context *context, Node *node)
             }
         }
     }
-
     write_bytes(context, &node->trace, to_write, abs(size));
 }
 
@@ -187,7 +185,6 @@ void assemble_align(Context *context, Node *node)
     {
         pad_bytes(context, &node->trace, 1);
     }
-
 }
 
 void assemble_reserve(Context *context, Node *node)

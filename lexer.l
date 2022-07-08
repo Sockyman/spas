@@ -101,10 +101,10 @@
     return INTEGER;
 }
 
-\"([^\"])*\" {
+\"([^"])*\" {
     yylval.string = malloc(strlen(yytext) - 1);
     memcpy(yylval.string, yytext + 1, strlen(yytext) - 2);
-    yylval.string[strlen(yytext) - 1] = 0;
+    yylval.string[strlen(yytext) - 2] = 0;
     return STRING;
 }
 
