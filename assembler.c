@@ -169,8 +169,14 @@ void assemble_data(Context *context, Node *node)
 void assemble_address(Context *context, Node *node)
 {
     int value;
-    //TODO: error chekcing
     resolve_expression(context->symbol_map, node->expression, &value);
+
+    //TODO: error chekcing
+    if (value < get_address(context) && context->final_pass)
+    {
+        print_error(&node->trace, "Address already passed.");
+    }
+
     while (value > get_address(context))
     {
         pad_bytes(context, &node->trace, 1);
