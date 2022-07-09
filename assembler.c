@@ -127,28 +127,28 @@ bool assemble_node(Context *context, Node *node)
     return compare_expected(context, node);
 }
 
-void assemble_instruction(Context *context, Node *node)
+void assemble_opcode(Context *context, Trace *trace, char *name, int mode, Expression *expr)
 {
     unsigned char to_write[3];
-    int size = instruction_size(node->mode);
+    int size = instruction_size(mode);
 
     if (context->final_pass)
     {
         if (context->final_pass)
         {
-            if (!instruction_opcode(node->name, node->mode, &to_write[0]))
+            if (!instruction_opcode(name, mode, &to_write[0]))
             {
-                print_error(&node->trace, "instruction \"%s%s\" does not exist", node->name, 
-                    get_addressing_mode_name(node->mode));
+                print_error(trace, "instruction \"%s%s\" does not exist", name, 
+                    get_addressing_mode_name(mode));
             }
         }
 
         if (size != 1)
         {
             int value = 0;
-            if (!resolve_expression(context->symbol_map, node->expression, &value))
+            if (!resolve_expression(context->symbol_map, expr, &value))
             {
-                bad_expression(&node->trace, node->expression);
+                bad_expression(trace, expr);
             }
     
             if (size > 1)
@@ -165,7 +165,25 @@ void assemble_instruction(Context *context, Node *node)
             }
         }
     }
-    write_bytes(context, &node->trace, to_write, abs(size));
+    write_bytes(context, trace, to_write, abs(size));
+}
+
+void assemble_instruction(Context *context, Node *node)
+{
+    if (!strcmp(node->name, "call") && node->mode == ADDR_DIRECT)
+    {
+        assemble_opcode(context, &node->trace, "phc", ADDR_IMPLIED, NULL);
+        assemble_opcode(context, &node->trace, "jmp", ADDR_DIRECT, node->expression);
+    }
+    else if (!strcmp(node->name, "call") && node->mode == ADDR_INDEXED)
+    {
+        assemble_opcode(context, &node->trace, "phc", ADDR_IMPLIED, NULL);
+        assemble_opcode(context, &node->trace, "jmp", ADDR_INDEXED, NULL);
+        assemble_opcode(context, &node->trace, "nop", ADDR_IMPLIED, NULL);
+        assemble_opcode(context, &node->trace, "nop", ADDR_IMPLIED, NULL);
+    }
+    else
+        assemble_opcode(context, &node->trace, node->name, node->mode, node->expression);
 }
 
 void assemble_data(Context *context, Node *node)

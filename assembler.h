@@ -14,6 +14,7 @@
 void assemble(FILE *file, Node *nodes, bool print_symbols);
 bool assembler_pass(Context *context, Node *nodes);
 bool assemble_node(Context *context, Node *node);
+void assemble_opcode(Context *context, Trace *trace, char *name, int mode, Expression *expr);
 void assemble_instruction(Context *context, Node *node);
 void assemble_data(Context *context, Node *node);
 void assemble_address(Context *context, Node *node);
