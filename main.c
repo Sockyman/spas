@@ -8,6 +8,7 @@
 #include "trace.h"
 #include "error.h"
 #include "parse.h"
+#include "stdlib.h"
 
 const char *argp_program_version = "SPDR assembler v5.0.";
 const char *argp_program_bug_address = "<sockymanthesock@gmail.com>";
@@ -17,7 +18,8 @@ static struct argp_option options[] =
 {
 	{ "output", 'o', "OUTFILE", 0, "File to write to" },
     { "symbols", 'y', 0, 0, "Print the value of assembler symbols" },
-    { "print", 'p', 0, 0, "Output in plaintext" },
+    //{ "print", 'p', 0, 0, "Output in plaintext" },
+    { "stdlib", 'l', "STDLIB_PATH", 0, "Path to the standard library" },
     { 0 }
 };
 
@@ -27,6 +29,7 @@ struct arguments
     char *outfile;
     bool pretty_print;
     bool symbols;
+    char *stdlib;
 };
 
 error_t parse_opt(int key, char *arg, struct argp_state *state)
@@ -42,6 +45,9 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
             break;
         case 'y':
             arguments->symbols = true;
+            break;
+        case 'l':
+            arguments->stdlib = strdup(arg);
             break;
         case ARGP_KEY_ARG:
             arguments->infile = arg;
@@ -65,8 +71,14 @@ int main(int argc, char **argv)
     arguments.outfile = NULL;
     arguments.pretty_print = false;
     arguments.symbols = false;
+    arguments.stdlib = NULL;
 
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
+
+    if (arguments.stdlib)
+    {
+        set_stdlib_path(arguments.stdlib);
+    }
 
     if (arguments.infile)
     {

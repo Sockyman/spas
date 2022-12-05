@@ -53,19 +53,19 @@
 "!"     { return LOG_NOT; }
 "?"     { return QMARK; }
 
-"%address"           { return D_ADDR; }
-"%byte"              { return D_BYTE; }
-"%word"              { return D_WORD; }
-"%align"             { return D_ALIGN; }
-"%include"           { return D_INCLUDE; }
-"%include_once"      { return D_INCLUDE_ONCE; }
-"%include_binary"    { return D_INCLUDE_BIN; }
+"address"           { return D_ADDR; }
+"byte"              { return D_BYTE; }
+"word"              { return D_WORD; }
+"align"             { return D_ALIGN; }
+"include"           { return D_INCLUDE; }
+"include_once"      { return D_INCLUDE_ONCE; }
+"include_binary"    { return D_INCLUDE_BIN; }
 
-"%section"          { return D_SECTION; }
-"%res"              { return D_RESERVE; }
+"section"          { return D_SECTION; }
+"res"              { return D_RESERVE; }
 
-"%macro"            { return D_MACRO; }
-"%endmacro"         { return D_ENDMACRO; }
+"macro"            { return D_MACRO; }
+"endmacro"         { return D_ENDMACRO; }
 
 "." {
     return DOT;

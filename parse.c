@@ -3,6 +3,7 @@
 #include "parse.h"
 #include "parser.tab.h"
 #include "error.h"
+#include "stdlib.h"
 
 struct Path *path_cache;
 
@@ -72,7 +73,7 @@ void resolve_filename(char *string, const char *from, const char *filename)
     char stdlib_prefix[] = "std:";
     if (!strncmp(filename, stdlib_prefix, sizeof(stdlib_prefix) - 1))
     {
-        sprintf(string, "%s/%s", "std", filename + 4);
+        sprintf(string, "%s/%s", get_stdlib_path(), filename + strlen(stdlib_prefix));
     }
     else if (from && filename[0] != '/')
     {
